@@ -5,10 +5,11 @@ import sys
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, Union
 
 import toml
 from telethon import TelegramClient, events
-from telethon.tl.types import DocumentAttributeFilename, MessageMediaWebPage, User
+from telethon.tl.types import Channel, Chat, DocumentAttributeFilename, MessageMediaWebPage, User
 
 
 DB_PATH = 'data.sqlite3'
@@ -71,7 +72,7 @@ def get_log_filename(chat_id):
         return Path('logs', 'telegram_messages.log')
 
 
-def get_display_name(entity):
+def get_display_name(entity: Union[Channel, Chat, User]) -> str:
     username = getattr(entity, 'username', None)
     if username:
         return username
@@ -86,15 +87,15 @@ def get_display_name(entity):
     return display_name
 
 
-def is_enabled(chat_id):
+def is_enabled(chat_id) -> bool:
     return (not enabled_chats or chat_id in enabled_chats) and (chat_id not in disabled_chats)
 
 
-def iso_date(dt):
+def iso_date(dt) -> str:
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 
-async def get_user(user_id, chat_id=None):
+async def get_user(user_id: int, chat_id: Optional[int] = None) -> User:
     if not user_id:
         return None
 
@@ -117,7 +118,7 @@ async def get_user(user_id, chat_id=None):
 
 
 @client.on(events.NewMessage)
-async def on_new_message(event):
+async def on_new_message(event: events.NewMessage.Event) -> None:
     msg = event.message
 
     date = msg.date
@@ -189,7 +190,7 @@ async def on_new_message(event):
 
 
 @client.on(events.MessageEdited)
-async def on_message_edited(event):
+async def on_message_edited(event: events.MessageEdited.Event) -> None:
     msg = event.message
 
     date = msg.edit_date
@@ -316,7 +317,7 @@ async def on_message_edited(event):
 
 
 @client.on(events.MessageDeleted)
-async def on_message_deleted(event):
+async def on_message_deleted(event: events.MessageDeleted.Event) -> None:
     msg = event.original_update
 
     date = datetime.utcnow()
