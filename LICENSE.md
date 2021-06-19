@@ -1,5 +1,2 @@
 <<<<<<< main
-## The grass is never greener in philadelphia
-=======
-# FUCK this SHIT!
->>>>>>> main
+## Why is the world being so shitty to me? Huh? You got a reply? email me at idontgiveacrap@leaveMeAlone.net
