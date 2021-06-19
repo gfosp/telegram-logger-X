@@ -22,7 +22,13 @@ enabled_chats = config.get('enabled_chats', [])
 disabled_chats = config.get('disabled_chats', [])
 save_media = config.get('save_media', True)
 log_to_file = config.get('log_to_file', False)
+log_to_stdout = config.get('log_to_stdout', True)
+log_seperate_files = config.get('log_seperate_files', True)
 log_colors = config.get('log_colors', not log_to_file and sys.stdout.isatty())
+
+if (log_to_file is False) and (log_to_stdout is False):
+    print('ERROR: Misconfigured. Needs either log_to_stdout, log_to_file or both to be set to true.')
+    sys.exit(1)
 
 
 if log_colors:
@@ -53,6 +59,16 @@ else:
 
 client = TelegramClient('telegram-logger', api_id, api_hash)
 client.start()
+
+
+def get_log_filename(chat_id):
+    if log_seperate_files is True:
+        if chat_id:
+            return Path('logs', f'{chat_id}.log')
+        else:
+            return Path('logs', 'unknown.log')
+    else:
+        return Path('logs', 'telegram_messages.log')
 
 
 def get_display_name(entity):
@@ -141,11 +157,11 @@ async def on_new_message(event):
         filename = None
 
     if log_to_file:
-        logfile = Path('logs', f'{chat.id}.log')
+        logfile = get_log_filename(chat.id if chat else None)
         logfile.parent.mkdir(exist_ok=True)
         with logfile.open('a') as fd:
             fd.write(f'{out}\n')
-    else:
+    if log_to_stdout:
         print(out)
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -268,11 +284,11 @@ async def on_message_edited(event):
             out += f' {MAGENTA}{media_display}{RESET}'
 
     if log_to_file:
-        logfile = Path('logs', f'{chat.id}.log')
+        logfile = get_log_filename(chat.id if chat else None)
         logfile.parent.mkdir(exist_ok=True)
         with logfile.open('a') as fd:
             fd.write(f'{out}\n')
-    else:
+    if log_to_stdout:
         print(out)
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -375,10 +391,10 @@ async def on_message_deleted(event):
         out += RESET
 
         if log_to_file:
-            logfile = Path('logs', f'{chat.id if chat else "unknown"}.log')
+            logfile = get_log_filename(chat.id if chat else None)
             with logfile.open('a') as fd:
                 fd.write(f'{out}\n')
-        else:
+        if log_to_stdout:
             print(out)
 
         with sqlite3.connect(DB_PATH) as conn:
